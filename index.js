@@ -1,54 +1,49 @@
 import express from "express";
 import bodyParser from "body-parser";
+import { v4 as uuidv4 } from "uuid";
 
 const app = express();
 const port = 3000;
 
-let postare = {
-  title: "",
-  description: "",
-};
-
-//de facut un array cu toate postarile si cand apelez get servesc arrayul
+let postArray = [];
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
 app.get("/", (req, res) => {
+  console.log(postArray);
   res.render("index.ejs", {
-    rTitle: postare.title,
-    rDescription: postare.description,
+    posts: postArray,
   });
 });
 
 app.post("/submit", (req, res) => {
-  postare.title = req.body["title"].trim();
-  postare.description = req.body["description"].trim();
-  res.render("index.ejs", {
-    rTitle: postare.title,
-    rDescription: postare.description,
-  });
+  const newPost = {
+    id: uuidv4(),
+    title: req.body["title"].trim(),
+    description: req.body["description"].trim(),
+  };
+  postArray.push(newPost);
+  res.redirect("/");
 });
 
 app.post("/delete", (req, res) => {
-  console.log(req.query);
-  postare = {
-    title: "",
-    description: "",
-  };
-  res.render("deleted.ejs", {
-    rTitle: postare.title,
-    rDescription: postare.description,
-  });
+  const idToDelete = req.query.id;
+  postArray = postArray.filter((post) => post.id !== idToDelete);
+  res.redirect("/");
 });
 
 app.post("/put", (req, res) => {
-  postare.title = req.body["title"];
-  postare.description = req.body["description"];
-  res.render("index.ejs", {
-    rTitle: postare.title,
-    rDescription: postare.description,
-  });
+  const idToUpdate = req.body.id;
+  const updatedTitle = req.body.title.trim();
+  const updatedDescription = req.body.description.trim();
+
+  postArray = postArray.map((post) =>
+    post.id === idToUpdate
+      ? { ...post, title: updatedTitle, description: updatedDescription }
+      : post
+  );
+  res.redirect("/");
 });
 
 app.listen(port, () => {
